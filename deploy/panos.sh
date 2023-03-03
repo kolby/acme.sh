@@ -40,7 +40,7 @@ deployer() {
     # content="$content${nl}--$delim${nl}Content-Disposition: form-data; type=\"keygen\"; user=\"$_panos_user\"; password=\"$_panos_pass\"${nl}Content-Type: application/octet-stream${nl}${nl}"
   fi
 
-  if [ "$type" = 'cert' ] || [ "$type" = 'key' ]; then
+if [ "$type" = 'cert' ] || [ "$type" = 'key' ]; then
     #Generate DEIM
     delim="-----MultipartDelimiter$(date "+%s%N")"
     nl="\015\012"
@@ -52,8 +52,13 @@ deployer() {
       content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"certificate-name\"\r\n\r\n$_cdomain"
       content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"key\"\r\n\r\n$_panos_key"
       content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"format\"\r\n\r\npem"
-      content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"file\"; filename=\"$(basename "$_cfullchain")\"${nl}Content-Type: application/octet-stream${nl}${nl}$(cat "$_cfullchain")"
+      filename="$(basename "$_cfullchain")"
+      fixed_filename="$(echo "$filename" | sed 's/\*/x/g')"
+      content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"file\"; filename=\"$fixed_filename\"${nl}Content-Type: application/octet-stream${nl}${nl}$(cat "$_cfullchain")"
+      fixed_certname="$(echo "$_cdomain" | sed 's/\*/x/g')"
+      content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"certificate-name\"\r\n\r\n$fixed_certname"
     fi
+
     if [ "$type" = 'key' ]; then
       panos_url="${panos_url}?type=import"
       content="--$delim${nl}Content-Disposition: form-data; name=\"category\"\r\n\r\nprivate-key"
@@ -61,7 +66,11 @@ deployer() {
       content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"key\"\r\n\r\n$_panos_key"
       content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"format\"\r\n\r\npem"
       content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"passphrase\"\r\n\r\n123456"
-      content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"file\"; filename=\"$(basename "$_ckey")\"${nl}Content-Type: application/octet-stream${nl}${nl}$(cat "$_ckey")"
+      filename="$(basename "$_ckey")"
+      fixed_filename="$(echo "$filename" | sed 's/\*/x/g')"
+      content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"file\"; filename=\"$fixed_filename\"${nl}Content-Type: application/octet-stream${nl}${nl}$(cat "$_ckey")"
+      fixed_certname="$(echo "$_cdomain" | sed 's/\*/x/g')"
+      content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"certificate-name\"\r\n\r\n$fixed_certname"
     fi
     #Close multipart
     content="$content${nl}--$delim--${nl}${nl}"
